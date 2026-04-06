@@ -11,10 +11,13 @@ celery_app = Celery(
     backend=REDIS_URL
 )
 
-@celery_app.task(name="worker.run_swarm_task")
-def run_swarm_task(run_id: int):
+def execute_swarm_task(run_id: int):
     db = SessionLocal()
     try:
         swarm_engine.run_swarm_pipeline(run_id, db)
     finally:
         db.close()
+
+@celery_app.task(name="worker.run_swarm_task")
+def run_swarm_task(run_id: int):
+    execute_swarm_task(run_id)

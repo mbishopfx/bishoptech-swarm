@@ -1,10 +1,14 @@
+import os
+import threading
+
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Response
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 import models, schemas, rag_service, export_service
 from database import engine, get_db
-from worker import run_swarm_task
+from worker import run_swarm_task, execute_swarm_task
 import io
 
 # Initialize DB and Vector Extensions
@@ -15,6 +19,25 @@ except Exception as e:
     print(f"Warning: Could not initialize vector extension: {e}")
 
 app = FastAPI(title="BishopTech Swarm API")
+
+cors_origins = os.getenv("CORS_ORIGINS", "*")
+allow_origins = ["*"] if cors_origins.strip() == "*" else [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
+allow_credentials = cors_origins.strip() != "*"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=allow_credentials,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+def enqueue_swarm_task(run_id: int):
+    try:
+        run_swarm_task.delay(run_id)
+    except Exception as exc:
+        print(f"Celery unavailable, running swarm inline: {exc}")
+        threading.Thread(target=execute_swarm_task, args=(run_id,), daemon=True).start()
 
 # --- Agent Templates ---
 
@@ -116,7 +139,7 @@ def run_swarm(swarm_id: int, run_create: schemas.SwarmRunCreate, db: Session = D
     db.refresh(db_run)
     
     # Dispatch Celery task
-    run_swarm_task.delay(db_run.id)
+    enqueue_swarm_task(db_run.id)
     
     return db_run
 
