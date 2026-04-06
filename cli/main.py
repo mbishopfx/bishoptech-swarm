@@ -51,10 +51,16 @@ def swarms():
         console.print(f"[red]Error fetching swarms: {e}[/red]")
 
 @app.command()
-def run(swarm_id: int, prompt: str):
-    """Run a swarm with a given prompt."""
+def run(swarm_id: int, prompt: str, use_rag: bool = False, kb_id: int = None):
+    """Run a swarm with a given prompt and optional RAG."""
     try:
-        response = requests.post(f"{API_URL}/swarms/{swarm_id}/run", json={"input_prompt": prompt, "swarm_id": swarm_id})
+        payload = {
+            "input_prompt": prompt,
+            "swarm_id": swarm_id,
+            "use_rag": use_rag,
+            "kb_id": kb_id
+        }
+        response = requests.post(f"{API_URL}/swarms/{swarm_id}/run", json=payload)
         response.raise_for_status()
         run_data = response.json()
         run_id = run_data["id"]
@@ -80,6 +86,47 @@ def run(swarm_id: int, prompt: str):
                 
     except Exception as e:
         console.print(f"[red]Error running swarm: {e}[/red]")
+
+@app.command()
+def export_pdf(run_id: int, output_path: str = "swarm_output.pdf"):
+    """Export run results to a PDF file."""
+    try:
+        response = requests.get(f"{API_URL}/runs/{run_id}/export-pdf")
+        response.raise_for_status()
+        with open(output_path, "wb") as f:
+            f.write(response.content)
+        console.print(f"[green]Exported to {output_path}[/green]")
+    except Exception as e:
+        console.print(f"[red]Error exporting PDF: {e}[/red]")
+
+@app.command()
+def sync_rag(run_id: int, kb_id: int):
+    """Sync a swarm run result back to a Knowledge Base."""
+    try:
+        response = requests.post(f"{API_URL}/runs/{run_id}/export-rag?kb_id={kb_id}")
+        response.raise_for_status()
+        console.print(f"[green]Successfully synced run {run_id} to KB {kb_id}[/green]")
+    except Exception as e:
+        console.print(f"[red]Error syncing to RAG: {e}[/red]")
+
+@app.command()
+def kbs():
+    """List all Knowledge Bases."""
+    try:
+        response = requests.get(f"{API_URL}/knowledge-bases")
+        response.raise_for_status()
+        data = response.json()
+        
+        table = Table(title="Knowledge Bases")
+        table.add_column("ID", style="cyan")
+        table.add_column("Name", style="magenta")
+        
+        for kb in data:
+            table.add_row(str(kb["id"]), kb["name"])
+            
+        console.print(table)
+    except Exception as e:
+        console.print(f"[red]Error fetching KBs: {e}[/red]")
 
 @app.command()
 def logs(run_id: int):
