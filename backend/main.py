@@ -196,7 +196,7 @@ def chat_with_run(run_id: int, request: schemas.ChatRequest, db: Session = Depen
     
     try:
         response = completion(
-            model="gemini/gemini-1.5-pro-latest",
+            model="gemini/gemini-3.1-pro-latest",
             messages=gemini_messages,
             api_key=api_key
         )

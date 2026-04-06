@@ -11,7 +11,7 @@ def call_llm(system_prompt: str, user_prompt: str, api_choice: str):
     ]
     
     # Force Gemini for "Super Gemini" multi-agent swarm
-    model_name = "gemini/gemini-1.5-pro-latest"
+    model_name = "gemini/gemini-3.1-pro-latest"
     api_key = os.getenv("GEMINI_API_KEY")
     
     if not api_key:
