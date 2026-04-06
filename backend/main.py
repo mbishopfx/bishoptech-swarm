@@ -190,11 +190,13 @@ def chat_with_run(run_id: int, request: schemas.ChatRequest, db: Session = Depen
     import os
     from litellm import completion
     
+    api_key = os.getenv("GEMINI_API_KEY", "AIzaSyARqx6JpbU6CUzBWGTuqjEOJZztYMySseo")
+    
     try:
         response = completion(
             model="gemini/gemini-1.5-pro-latest",
             messages=gemini_messages,
-            api_key=os.getenv("GEMINI_API_KEY")
+            api_key=api_key
         )
         assistant_content = response.choices[0].message.content
         

@@ -10,28 +10,19 @@ def call_llm(system_prompt: str, user_prompt: str, api_choice: str):
         {"role": "user", "content": user_prompt}
     ]
     
-    model_name = "gemini/gemini-1.5-pro-latest" # fallback
-    api_key = None
-    api_base = None
-    
-    if api_choice.lower() == "xai":
-        model_name = "openai/grok-beta" 
-        api_key = os.getenv("XAI_API_KEY", "dummy")
-        api_base = "https://api.x.ai/v1"
-    elif api_choice.lower() == "gemini":
-        model_name = "gemini/gemini-1.5-pro-latest"
-        api_key = os.getenv("GEMINI_API_KEY", "dummy")
+    # Force Gemini for "Super Gemini" multi-agent swarm
+    model_name = "gemini/gemini-1.5-pro-latest"
+    api_key = os.getenv("GEMINI_API_KEY", "AIzaSyARqx6JpbU6CUzBWGTuqjEOJZztYMySseo")
     
     try:
         response = completion(
             model=model_name,
             messages=messages,
-            api_key=api_key,
-            api_base=api_base
+            api_key=api_key
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Error calling {api_choice}: {str(e)}"
+        return f"Error calling Gemini: {str(e)}"
 
 def run_swarm_pipeline(run_id: int, db_session):
     run = db_session.query(models.SwarmRun).filter(models.SwarmRun.id == run_id).first()
