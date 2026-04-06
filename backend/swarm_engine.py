@@ -12,7 +12,10 @@ def call_llm(system_prompt: str, user_prompt: str, api_choice: str):
     
     # Force Gemini for "Super Gemini" multi-agent swarm
     model_name = "gemini/gemini-1.5-pro-latest"
-    api_key = os.getenv("GEMINI_API_KEY", "AIzaSyARqx6JpbU6CUzBWGTuqjEOJZztYMySseo")
+    api_key = os.getenv("GEMINI_API_KEY")
+    
+    if not api_key:
+        return "Error: GEMINI_API_KEY not found in environment."
     
     try:
         response = completion(

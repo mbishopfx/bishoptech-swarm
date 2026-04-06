@@ -190,7 +190,9 @@ def chat_with_run(run_id: int, request: schemas.ChatRequest, db: Session = Depen
     import os
     from litellm import completion
     
-    api_key = os.getenv("GEMINI_API_KEY", "AIzaSyARqx6JpbU6CUzBWGTuqjEOJZztYMySseo")
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
     
     try:
         response = completion(
