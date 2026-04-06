@@ -1,0 +1,15 @@
+fastapi[standard]
+sqlalchemy
+psycopg2-binary
+celery
+redis
+litellm
+pydantic
+python-dotenv
+langchain
+langchain-community
+sentence-transformers
+pgvector
+fpdf2
+pypdf
+python-multipart
