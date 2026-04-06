@@ -163,3 +163,46 @@ def export_run_to_rag(run_id: int, kb_id: int, db: Session = Depends(get_db)):
     rag_service.add_documents_to_rag(kb_id, db_doc.filename, db_doc.content)
     
     return {"status": "exported_to_rag", "doc_id": db_doc.id}
+
+# --- Chat with Output ---
+
+@app.post("/api/runs/{run_id}/chat")
+def chat_with_run(run_id: int, request: schemas.ChatRequest, db: Session = Depends(get_db)):
+    run = db.query(models.SwarmRun).filter(models.SwarmRun.id == run_id).first()
+    if not run or not run.final_output:
+        raise HTTPException(status_code=404, detail="Run not found or not completed")
+    
+    # Save user message
+    user_msg = models.ChatMessage(run_id=run_id, role="user", content=request.message)
+    db.add(user_msg)
+    db.commit()
+    
+    # Get history
+    history = db.query(models.ChatMessage).filter(models.ChatMessage.run_id == run_id).order_by(models.ChatMessage.timestamp).all()
+    
+    # Prep Gemini prompt
+    gemini_messages = [
+        {"role": "system", "content": f"You are a helpful assistant. You are chatting about the following swarm output:\n\n{run.final_output}"},
+    ]
+    for h in history:
+        gemini_messages.append({"role": h.role, "content": h.content})
+    
+    import os
+    from litellm import completion
+    
+    try:
+        response = completion(
+            model="gemini/gemini-1.5-pro-latest",
+            messages=gemini_messages,
+            api_key=os.getenv("GEMINI_API_KEY")
+        )
+        assistant_content = response.choices[0].message.content
+        
+        # Save assistant message
+        assistant_msg = models.ChatMessage(run_id=run_id, role="assistant", content=assistant_content)
+        db.add(assistant_msg)
+        db.commit()
+        
+        return {"response": assistant_content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

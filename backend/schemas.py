@@ -71,6 +71,18 @@ class RunLog(BaseModel):
     class Config:
         from_attributes = True
 
+class ChatMessage(BaseModel):
+    id: int
+    run_id: int
+    role: str
+    content: str
+    timestamp: datetime
+    class Config:
+        from_attributes = True
+
+class ChatRequest(BaseModel):
+    message: str
+
 class SwarmRun(BaseModel):
     id: int
     swarm_id: int
@@ -82,5 +94,6 @@ class SwarmRun(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime]
     logs: Optional[List[RunLog]] = []
+    messages: Optional[List[ChatMessage]] = []
     class Config:
         from_attributes = True
